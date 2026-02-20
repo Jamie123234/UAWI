@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Web Agent | Universal API Bridge</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-dark: #050505;
+            --surface: #121212;
+            --surface-hover: #1a1a1a;
+            --primary: #00e5ff;
+            --secondary: #7000ff;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Background Effects */
+        .glow-bg {
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(112, 0, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1;
+            filter: blur(80px);
+        }
+
+        .glow-bg-2 {
+            position: fixed;
+            bottom: -20%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.1) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1;
+            filter: blur(80px);
+        }
+
+        /* Container & Grid */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-top: 4rem;
+        }
+
+        .badge {
+            background: rgba(0, 229, 255, 0.1);
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 1s ease-out 0.2s both;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        /* Terminal Window */
+        .terminal-wrapper {
+            width: 100%;
+            max-width: 700px;
+            animation: fadeInUp 1s ease-out 0.6s both;
+            perspective: 1000px;
+        }
+
+        .terminal {
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(112, 0, 255, 0.2);
+            overflow: hidden;
+            transform: rotateX(2deg);
+            transition: transform 0.3s ease;
+        }
+
+        .terminal:hover {
+            transform: rotateX(0deg);
+        }
+
+        .terminal-header {
+            background: #1a1a1a;
+            padding: 0.75rem 1rem;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        .terminal-body {
+            padding: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            color: #a9b7c6;
+            min-height: 200px;
+            text-align: left;
+        }
+
+        .line {
+            margin-bottom: 0.5rem;
+            opacity: 0;
+            display: none;
+        }
+
+        .line.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .prompt { color: var(--primary); margin-right: 10px; }
+        .command { color: #fff; }
+        .comment { color: #629755; }
+        .output { color: #9ca3af; }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background-color: var(--primary);
+            vertical-align: middle;
+            animation: blink 1s step-end infinite;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 8rem 0;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: var(--surface-hover);
+            border-color: rgba(0, 229, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        /* Animations */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="glow-bg"></div>
+    <div class="glow-bg-2"></div>
+
+    <section class="hero container">
+        <div class="badge">Model Context Protocol</div>
+        <h1>Turn Any Website Into a<br>Universal API</h1>
+        <p>Give your LLM the power to dynamically navigate, interact, and extract structured JSON from any web endpoint—no brittle selectors required.</p>
+        
+        <div class="terminal-wrapper">
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                </div>
+                <div class="terminal-body" id="terminal-body">
+                    </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features container">
+        <h2 class="section-title">Built for Autonomous Extraction</h2>
+        <div class="grid">
+            <div class="card fade-in">
+                <div class="card-icon">⚡</div>
+                <h3>Token-Optimized DOM Compression</h3>
+                <p>Stop hitting context window limits. Our system compresses complex page DOMs into lightweight, element-mapped structures, drastically cutting down token usage and API costs per request.</p>
+            </div>
+            <div class="card fade-in">
+                <div class="card-icon">🎯</div>
+                <h3>Resilient Scraping Engine</h3>
+                <p>Perfect for aggregating thousands of listings. The agentic loop dynamically adapts to layout changes and pagination, ensuring your data extraction pipelines never break.</p>
+            </div>
+            <div class="card fade-in">
+                <div class="card-icon">🔄</div>
+                <h3>Universal JSON API</h3>
+                <p>Treat the open web like a database. Simply pass a target URL and your desired JSON schema, and the agent handles the headless browsing, reasoning, and data formatting.</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // --- Terminal Typing Animation Logic ---
+        const scriptLines = [
+            { type: 'cmd', text: 'npm install -g @mcp/web-agent' },
+            { type: 'output', text: 'added 42 packages, and audited 43 packages in 2s' },
+            { type: 'cmd', text: 'pip install mcp-web-bridge' },
+            { type: 'output', text: 'Successfully installed mcp-web-bridge-1.0.0' },
+            { type: 'cmd', text: 'mcp-agent start --target="e-commerce" --schema="./product.json"' },
+            { type: 'comment', text: '[System] Booting headless browser fleet...' },
+            { type: 'comment', text: '[MCP Bridge] Agent connected to port 3000. Ready for queries 🚀' }
+        ];
+
+        const terminalBody = document.getElementById('terminal-body');
+        let currentLineIndex = 0;
+
+        function typeLine(lineData, callback) {
+            const lineDiv = document.createElement('div');
+            lineDiv.className = 'line active';
+            
+            if (lineData.type === 'cmd') {
+                lineDiv.innerHTML = `<span class="prompt">~$</span><span class="command"></span>`;
+                terminalBody.appendChild(lineDiv);
+                
+                const targetSpan = lineDiv.querySelector('.command');
+                const cursor = document.createElement('span');
+                cursor.className = 'cursor';
+                lineDiv.appendChild(cursor);
+
+                let charIndex = 0;
+                const typingInterval = setInterval(() => {
+                    if (charIndex < lineData.text.length) {
+                        targetSpan.textContent += lineData.text.charAt(charIndex);
+                        charIndex++;
+                    } else {
+                        clearInterval(typingInterval);
+                        lineDiv.removeChild(cursor);
+                        setTimeout(callback, 400); // Wait before next line
+                    }
+                }, 40); // Typing speed
+            } else {
+                let colorClass = lineData.type === 'comment' ? 'comment' : 'output';
+                lineDiv.innerHTML = `<span class="${colorClass}">${lineData.text}</span>`;
+                terminalBody.appendChild(lineDiv);
+                setTimeout(callback, 300); // Quick delay for output lines
+            }
+        }
+
+        function runTerminalSequence() {
+            if (currentLineIndex < scriptLines.length) {
+                typeLine(scriptLines[currentLineIndex], () => {
+                    currentLineIndex++;
+                    runTerminalSequence();
+                });
+            } else {
+                // Keep cursor blinking at the end
+                const finalLine = document.createElement('div');
+                finalLine.className = 'line active';
+                finalLine.innerHTML = `<span class="prompt">~$</span><span class="cursor"></span>`;
+                terminalBody.appendChild(finalLine);
+            }
+        }
+
+        // Start animation after slight delay
+        setTimeout(runTerminalSequence, 1500);
+
+
+        // --- Scroll Reveal Animations for Cards ---
+        const cards = document.querySelectorAll('.fade-in');
+        
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => {
+                        entry.target.classList.add('visible');
+                    }, index * 150); // Stagger the card reveals
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        cards.forEach(card => observer.observe(card));
+
+    </script>
+</body>
+</html>
