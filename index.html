@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MCP Web Agent | Universal API Bridge</title>
+    <title>MCP Compiler | Web-to-API Bridge</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
@@ -13,6 +13,7 @@
             --surface-hover: #1a1a1a;
             --primary: #00e5ff;
             --secondary: #7000ff;
+            --success: #27c93f;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
             --border: rgba(255, 255, 255, 0.1);
@@ -39,7 +40,7 @@
             left: -10%;
             width: 50vw;
             height: 50vw;
-            background: radial-gradient(circle, rgba(112, 0, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(112, 0, 255, 0.12) 0%, rgba(0,0,0,0) 70%);
             z-index: -1;
             filter: blur(80px);
         }
@@ -50,12 +51,11 @@
             right: -10%;
             width: 50vw;
             height: 50vw;
-            background: radial-gradient(circle, rgba(0, 229, 255, 0.1) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(0, 229, 255, 0.08) 0%, rgba(0,0,0,0) 70%);
             z-index: -1;
             filter: blur(80px);
         }
 
-        /* Container & Grid */
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -64,13 +64,13 @@
 
         /* Hero Section */
         .hero {
-            min-height: 100vh;
+            padding-top: 6rem;
+            padding-bottom: 4rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding-top: 4rem;
         }
 
         .badge {
@@ -101,87 +101,152 @@
         .hero p {
             font-size: 1.25rem;
             color: var(--text-muted);
-            max-width: 600px;
+            max-width: 700px;
             margin-bottom: 3rem;
             animation: fadeInUp 1s ease-out 0.4s both;
         }
 
-        /* Terminal Window */
-        .terminal-wrapper {
+        /* Interactive Compiler Demo */
+        .compiler-demo {
             width: 100%;
-            max-width: 700px;
+            max-width: 800px;
+            margin: 0 auto 4rem auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             animation: fadeInUp 1s ease-out 0.6s both;
-            perspective: 1000px;
         }
 
-        .terminal {
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group input {
+            flex: 1;
             background: #0a0a0a;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(112, 0, 255, 0.2);
-            overflow: hidden;
-            transform: rotateX(2deg);
-            transition: transform 0.3s ease;
-        }
-
-        .terminal:hover {
-            transform: rotateX(0deg);
-        }
-
-        .terminal-header {
-            background: #1a1a1a;
-            padding: 0.75rem 1rem;
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        .dot.red { background: #ff5f56; }
-        .dot.yellow { background: #ffbd2e; }
-        .dot.green { background: #27c93f; }
-
-        .terminal-body {
-            padding: 2rem;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            color: #fff;
+            font-size: 1rem;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
-            color: #a9b7c6;
-            min-height: 200px;
-            text-align: left;
+            outline: none;
+            transition: border-color 0.3s ease;
         }
 
-        .line {
-            margin-bottom: 0.5rem;
-            opacity: 0;
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .compile-btn {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .compile-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .compile-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Progress Stepper */
+        .stepper {
             display: none;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
 
-        .line.active {
-            display: block;
+        .stepper.active {
+            display: flex;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            opacity: 0.4;
+            transition: opacity 0.3s ease;
+        }
+
+        .step.current {
             opacity: 1;
         }
 
-        .prompt { color: var(--primary); margin-right: 10px; }
-        .command { color: #fff; }
-        .comment { color: #629755; }
-        .output { color: #9ca3af; }
-
-        .cursor {
-            display: inline-block;
-            width: 10px;
-            height: 18px;
-            background-color: var(--primary);
-            vertical-align: middle;
-            animation: blink 1s step-end infinite;
+        .step.done {
+            opacity: 1;
         }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .step.current .spinner {
+            display: block;
+        }
+
+        .check {
+            color: var(--success);
+            font-weight: bold;
+            display: none;
+            width: 20px;
+            text-align: center;
+        }
+
+        .step.done .check {
+            display: block;
+        }
+        
+        .step.done .spinner {
+            display: none;
+        }
+
+        /* Output Window */
+        .output-window {
+            display: none;
+            background: #0a0a0a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: #a9b7c6;
+            text-align: left;
+            overflow-x: auto;
+        }
+
+        .output-window.active {
+            display: block;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        .json-key { color: var(--primary); }
+        .json-string { color: #629755; }
+        .json-boolean { color: #cc7832; }
 
         /* Features Section */
         .features {
-            padding: 8rem 0;
+            padding: 4rem 0 8rem 0;
         }
 
         .section-title {
@@ -253,9 +318,8 @@
         }
 
         /* Animations */
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         @keyframes fadeInUp {
@@ -276,111 +340,125 @@
     <div class="glow-bg-2"></div>
 
     <section class="hero container">
-        <div class="badge">Model Context Protocol</div>
-        <h1>Turn Any Website Into a<br>Universal API</h1>
-        <p>Give your LLM the power to dynamically navigate, interact, and extract structured JSON from any web endpoint—no brittle selectors required.</p>
-        
-        <div class="terminal-wrapper">
-            <div class="terminal">
-                <div class="terminal-header">
-                    <div class="dot red"></div>
-                    <div class="dot yellow"></div>
-                    <div class="dot green"></div>
+        <div class="badge">Dynamic MCP Server Compilation</div>
+        <h1>Turn Any URL Into a<br>Dedicated API in 5 Minutes</h1>
+        <p>Enter a target URL. Our Explorer Agent maps the site, generates a strict schema, and instantly spins up a persistent Model Context Protocol server for your AI to query.</p>
+    </section>
+
+    <section class="container">
+        <div class="compiler-demo">
+            <div class="input-group">
+                <input type="text" id="target-url" value="https://example-ecommerce.com/jobs" placeholder="Enter target URL...">
+                <button class="compile-btn" id="compile-btn">Generate API</button>
+            </div>
+
+            <div class="stepper" id="stepper">
+                <div class="step" id="step-1">
+                    <div class="spinner"></div><div class="check">✓</div>
+                    <span>Deploying Explorer Agent via Headless Browser...</span>
                 </div>
-                <div class="terminal-body" id="terminal-body">
-                    </div>
+                <div class="step" id="step-2">
+                    <div class="spinner"></div><div class="check">✓</div>
+                    <span>Mapping DOM & Inferring JSON Schema...</span>
+                </div>
+                <div class="step" id="step-3">
+                    <div class="spinner"></div><div class="check">✓</div>
+                    <span>Compiling Endpoints & Spinning up MCP Server...</span>
+                </div>
+            </div>
+
+            <div class="output-window" id="output-window">
+<pre><code><span class="comment">// MCP Tool Definition Successfully Generated</span>
+{
+  <span class="json-key">"name"</span>: <span class="json-string">"search_listings"</span>,
+  <span class="json-key">"description"</span>: <span class="json-string">"Queries the compiled target site and returns structured data."</span>,
+  <span class="json-key">"parameters"</span>: {
+    <span class="json-key">"type"</span>: <span class="json-string">"object"</span>,
+    <span class="json-key">"properties"</span>: {
+      <span class="json-key">"query"</span>: { <span class="json-key">"type"</span>: <span class="json-string">"string"</span> },
+      <span class="json-key">"filters"</span>: { <span class="json-key">"type"</span>: <span class="json-string">"object"</span> }
+    }
+  },
+  <span class="json-key">"endpoint"</span>: <span class="json-string">"wss://mcp.bridge.dev/live/e2a4b"</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"active"</span>
+}</code></pre>
             </div>
         </div>
     </section>
 
     <section class="features container">
-        <h2 class="section-title">Built for Autonomous Extraction</h2>
+        <h2 class="section-title">The Web-to-API Architecture</h2>
         <div class="grid">
             <div class="card fade-in">
+                <div class="card-icon">🧠</div>
+                <h3>The Explorer Agent</h3>
+                <p>You don't need to manually map selectors. Our internal agent navigates the target URL, detects pagination, search bars, and product cards, and automatically authors the REST endpoints.</p>
+            </div>
+            <div class="card fade-in">
+                <div class="card-icon">📉</div>
+                <h3>Extreme Token Economics</h3>
+                <p>Stop paying to pass massive 180k+ token DOM payloads to your LLM for every single query. The compiled MCP server handles the heavy browser execution; your AI just makes a standard tool call.</p>
+            </div>
+            <div class="card fade-in">
                 <div class="card-icon">⚡</div>
-                <h3>Token-Optimized DOM Compression</h3>
-                <p>Stop hitting context window limits. Our system compresses complex page DOMs into lightweight, element-mapped structures, drastically cutting down token usage and API costs per request.</p>
-            </div>
-            <div class="card fade-in">
-                <div class="card-icon">🎯</div>
-                <h3>Resilient Scraping Engine</h3>
-                <p>Perfect for aggregating thousands of listings. The agentic loop dynamically adapts to layout changes and pagination, ensuring your data extraction pipelines never break.</p>
-            </div>
-            <div class="card fade-in">
-                <div class="card-icon">🔄</div>
-                <h3>Universal JSON API</h3>
-                <p>Treat the open web like a database. Simply pass a target URL and your desired JSON schema, and the agent handles the headless browsing, reasoning, and data formatting.</p>
+                <h3>Persistent Infrastructure</h3>
+                <p>This isn't a one-off scraper. The system generates a persistent, scalable MCP server instance. Integrate it once, and let your AI fetch live, real-time data flawlessly.</p>
             </div>
         </div>
     </section>
 
     <script>
-        // --- Terminal Typing Animation Logic ---
-        const scriptLines = [
-            { type: 'cmd', text: 'npm install -g @mcp/web-agent' },
-            { type: 'output', text: 'added 42 packages, and audited 43 packages in 2s' },
-            { type: 'cmd', text: 'pip install mcp-web-bridge' },
-            { type: 'output', text: 'Successfully installed mcp-web-bridge-1.0.0' },
-            { type: 'cmd', text: 'mcp-agent start --target="e-commerce" --schema="./product.json"' },
-            { type: 'comment', text: '[System] Booting headless browser fleet...' },
-            { type: 'comment', text: '[MCP Bridge] Agent connected to port 3000. Ready for queries 🚀' }
+        // Interactive Compiler Logic
+        const compileBtn = document.getElementById('compile-btn');
+        const stepper = document.getElementById('stepper');
+        const outputWindow = document.getElementById('output-window');
+        const steps = [
+            document.getElementById('step-1'),
+            document.getElementById('step-2'),
+            document.getElementById('step-3')
         ];
 
-        const terminalBody = document.getElementById('terminal-body');
-        let currentLineIndex = 0;
-
-        function typeLine(lineData, callback) {
-            const lineDiv = document.createElement('div');
-            lineDiv.className = 'line active';
+        compileBtn.addEventListener('click', () => {
+            // Reset state
+            compileBtn.disabled = true;
+            compileBtn.style.opacity = '0.7';
+            outputWindow.classList.remove('active');
+            stepper.classList.add('active');
             
-            if (lineData.type === 'cmd') {
-                lineDiv.innerHTML = `<span class="prompt">~$</span><span class="command"></span>`;
-                terminalBody.appendChild(lineDiv);
-                
-                const targetSpan = lineDiv.querySelector('.command');
-                const cursor = document.createElement('span');
-                cursor.className = 'cursor';
-                lineDiv.appendChild(cursor);
+            steps.forEach(step => {
+                step.classList.remove('current', 'done');
+            });
 
-                let charIndex = 0;
-                const typingInterval = setInterval(() => {
-                    if (charIndex < lineData.text.length) {
-                        targetSpan.textContent += lineData.text.charAt(charIndex);
-                        charIndex++;
-                    } else {
-                        clearInterval(typingInterval);
-                        lineDiv.removeChild(cursor);
-                        setTimeout(callback, 400); // Wait before next line
-                    }
-                }, 40); // Typing speed
-            } else {
-                let colorClass = lineData.type === 'comment' ? 'comment' : 'output';
-                lineDiv.innerHTML = `<span class="${colorClass}">${lineData.text}</span>`;
-                terminalBody.appendChild(lineDiv);
-                setTimeout(callback, 300); // Quick delay for output lines
+            // Sequence Timing
+            let currentStep = 0;
+            
+            function processStep() {
+                if (currentStep < steps.length) {
+                    // Start current step
+                    steps[currentStep].classList.add('current');
+                    
+                    // Simulate processing time
+                    setTimeout(() => {
+                        steps[currentStep].classList.remove('current');
+                        steps[currentStep].classList.add('done');
+                        currentStep++;
+                        processStep();
+                    }, 1500 + Math.random() * 1000); // Random delay between 1.5s and 2.5s
+                } else {
+                    // Finished
+                    setTimeout(() => {
+                        outputWindow.classList.add('active');
+                        compileBtn.disabled = false;
+                        compileBtn.style.opacity = '1';
+                        compileBtn.textContent = 'API Live';
+                    }, 500);
+                }
             }
-        }
 
-        function runTerminalSequence() {
-            if (currentLineIndex < scriptLines.length) {
-                typeLine(scriptLines[currentLineIndex], () => {
-                    currentLineIndex++;
-                    runTerminalSequence();
-                });
-            } else {
-                // Keep cursor blinking at the end
-                const finalLine = document.createElement('div');
-                finalLine.className = 'line active';
-                finalLine.innerHTML = `<span class="prompt">~$</span><span class="cursor"></span>`;
-                terminalBody.appendChild(finalLine);
-            }
-        }
+            processStep();
+        });
 
-        // Start animation after slight delay
-        setTimeout(runTerminalSequence, 1500);
-
-
-        // --- Scroll Reveal Animations for Cards ---
+        // Scroll Reveal Animations for Cards
         const cards = document.querySelectorAll('.fade-in');
         
         const observerOptions = {
@@ -393,7 +471,7 @@
                 if (entry.isIntersecting) {
                     setTimeout(() => {
                         entry.target.classList.add('visible');
-                    }, index * 150); // Stagger the card reveals
+                    }, index * 150);
                     observer.unobserve(entry.target);
                 }
             });
@@ -404,3 +482,4 @@
     </script>
 </body>
 </html>
+
